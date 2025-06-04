@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(255)
+  sku         String    @unique @db.VarChar(50)
+  barcode     String?   @unique(map: "barcode_unique") @db.VarChar(50)
+  price       Decimal   @db.Decimal(10, 2)
+  stock       Int       @default(0)
+  description String?   @db.VarChar(1000)
+  categoryId  Int
+  category    Category  @relation(name: "ProductCategory", fields: [categoryId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+  // soft delete
+  isActive    Boolean   @default(true)
+  // events timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // performance indexes
+  @@index([categoryId], name: "IDX_Product_categoryId")
+  @@index([barcode], name: "IDX_Product_barcode")
+  @@index([isActive], name: "IDX_Product_isActive")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(100)
+  products  Product[] @relation("ProductCategory")
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
